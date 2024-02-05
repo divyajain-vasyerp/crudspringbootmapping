@@ -24,12 +24,12 @@ public class StudentController {
 	@Autowired
 	private StudentService studentService;
 
-	@GetMapping("/")
+	@GetMapping("/getAllStudents")
 	public ResponseEntity<List<StudentDTO>> get() {
 		return ResponseEntity.ok(studentService.getAllStudents());
 	}
-	
-	@GetMapping("/{id}")
+
+	@GetMapping("/getStudentById/{id}")
 	public ResponseEntity<?> getStudentById(@PathVariable Long id) {
 		try {
 			StudentDTO studentDto = studentService.getStudentById(id);
@@ -41,7 +41,7 @@ public class StudentController {
 		}
 	}
 
-	@PostMapping("/add")
+	@PostMapping("/addStudent")
 	public ResponseEntity<String> add(@RequestBody StudentDTO studentDto) {
 		try {
 			studentService.save(studentDto);
@@ -52,7 +52,7 @@ public class StudentController {
 		}
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping("/updateStudent/{id}")
 	public ResponseEntity<String> update(@PathVariable long id, @RequestBody StudentDTO studentDto) {
 		try {
 			studentService.update(id, studentDto);
@@ -62,15 +62,27 @@ public class StudentController {
 			return ResponseEntity.status(HttpStatus.UPGRADE_REQUIRED).body("Yor data is not Updated");
 		}
 	}
-	
-	@DeleteMapping("/delete/{id}")
+
+	@DeleteMapping("/deleteStudent/{id}")
 	public ResponseEntity<String> deleteStudent(@PathVariable Long id) {
 		try {
 			studentService.deleteStudentById(id);
 			return ResponseEntity.ok("Id is Sucessfully Deleted " + id);
 		} catch (Exception e) {
 			System.out.println("Id is Not Deleted " + id);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Is is not Deleted " + id );
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Is is not Deleted " + id);
+		}
+	}
+
+	@PostMapping("/{studentId}/assignBook/{bookId}")
+	public ResponseEntity<String> assignBookToStudent(@PathVariable Long studentId, @PathVariable Long bookId) {
+		try {
+			studentService.assignBookToStudent(studentId, bookId);
+			return ResponseEntity.ok("Book assigned to student successfully.");
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(500).body("Student already has a book assigned");
 		}
 	}
 

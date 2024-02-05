@@ -12,4 +12,7 @@ public interface StudentService {
     Student deleteStudentById(Long id);
     public void save(StudentDTO studentDTO);
 	public void update(long id, StudentDTO studentDTO);
+	
+    void assignBookToStudent(Long studentId, Long bookId);
+
 }

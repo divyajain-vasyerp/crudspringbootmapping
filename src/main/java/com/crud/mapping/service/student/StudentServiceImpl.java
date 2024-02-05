@@ -33,16 +33,16 @@ public class StudentServiceImpl implements StudentService {
 			studentDto.setName(student.getName());
 			studentDto.setEmail(student.getEmail());
 			studentDto.setNumber(student.getNumber());
-			
-			// Create LibraryDTO and set its properties
-	        LibraryDTO libraryDTO = new LibraryDTO();
-	        libraryDTO.setBookId(student.getBook().getBookId());
-	        libraryDTO.setBookName(student.getBook().getBookName());
-	        libraryDTO.setBookAuthor(student.getBook().getBookAuthor());
-	        // Set the LibraryDTO in StudentDTO
-	        studentDto.setLibrary(libraryDTO);
-	        
-	        // Add the StudentDTO to the list
+
+			Library book = student.getBook();
+			if (book != null) {
+				LibraryDTO libraryDTO = new LibraryDTO();
+				libraryDTO.setBookId(student.getBook().getBookId());
+				libraryDTO.setBookName(student.getBook().getBookName());
+				libraryDTO.setBookAuthor(student.getBook().getBookAuthor());
+				studentDto.setLibrary(libraryDTO);
+			}
+
 			list.add(studentDto);
 		}
 		return list;
@@ -51,17 +51,21 @@ public class StudentServiceImpl implements StudentService {
 	@Override
 	public StudentDTO getStudentById(Long id) {
 		Student student = studentRepository.findById(id).get();
+		Library book = student.getBook();
+
 		StudentDTO studentDto = new StudentDTO();
+		LibraryDTO libraryDTO = new LibraryDTO();
 		studentDto.setId(student.getId());
 		studentDto.setRollNo(student.getRollNo());
 		studentDto.setName(student.getName());
 		studentDto.setEmail(student.getEmail());
 		studentDto.setNumber(student.getNumber());
-		LibraryDTO libraryDTO = new LibraryDTO();
-		libraryDTO.setBookId(student.getBook().getBookId());
-		libraryDTO.setBookName(student.getBook().getBookName());
-		libraryDTO.setBookAuthor(student.getBook().getBookAuthor());
-		studentDto.setLibrary(libraryDTO);
+		if (book != null) {
+			libraryDTO.setBookId(student.getBook().getBookId());
+			libraryDTO.setBookName(student.getBook().getBookName());
+			libraryDTO.setBookAuthor(student.getBook().getBookAuthor());
+			studentDto.setLibrary(libraryDTO);
+		}
 		return studentDto;
 	}
 
@@ -72,10 +76,6 @@ public class StudentServiceImpl implements StudentService {
 		if (optionalStudent.isPresent()) {
 			Student studentEdit = optionalStudent.get();
 
-			if (studentDTO.getId() != 0) {
-				studentEdit.setId(studentDTO.getId());
-			}
-
 			if (studentDTO.getRollNo() != null) {
 				studentEdit.setRollNo(studentDTO.getRollNo());
 			}
@@ -83,7 +83,6 @@ public class StudentServiceImpl implements StudentService {
 			if (studentDTO.getName() != null) {
 				studentEdit.setName(studentDTO.getName());
 			}
-
 			if (studentDTO.getEmail() != null) {
 				studentEdit.setEmail(studentDTO.getEmail());
 			}
@@ -92,62 +91,37 @@ public class StudentServiceImpl implements StudentService {
 				studentEdit.setNumber(studentDTO.getNumber());
 			}
 
-			Library library = new Library();
-
-			studentEdit.setRollNo(studentDTO.getRollNo());
-			studentEdit.setName(studentDTO.getName());
-			studentEdit.setEmail(studentDTO.getEmail());
-			studentEdit.setNumber(studentDTO.getNumber());
-			library.setBookId(studentDTO.getLibrary().getBookId());
-			library.setBookName(studentDTO.getLibrary().getBookName());
-			library.setBookAuthor(studentDTO.getLibrary().getBookAuthor());
-
-			// Save the library
-			libraryRepository.save(library);
-			studentEdit.setBook(library);
+			if (studentDTO.getLibrary() != null) {
+				Library library = new Library();
+				library.setBookId(studentDTO.getLibrary().getBookId());
+				library.setBookName(studentDTO.getLibrary().getBookName());
+				library.setBookAuthor(studentDTO.getLibrary().getBookAuthor());
+				studentEdit.setBook(library);
+			}
 			studentRepository.save(studentEdit);
 		}
 	}
-
-//	@Override
-//	public void updated(long id, StudentDTO studentDTO) {
-//		Student studentEdit = studentRepository.findById(id).get();
-//		Library library = new Library();
-//		if (studentDTO.getId() != null) {
-//			studentEdit.setId(studentDTO.getId());
-//		} else if (studentDTO.getRollNo() != null) {
-//			studentEdit.setRollNo(studentDTO.getRollNo());
-//		} else if (studentDTO.getName() != null) {
-//			studentEdit.setName(studentDTO.getName());
-//		} else if (studentDTO.getEmail() != null) {
-//			studentEdit.setEmail(studentDTO.getEmail());
-//		} else if (studentDTO.getNumber() != 0) {
-//			studentEdit.setNumber(studentDTO.getNumber());
-//		}
-//		studentRepository.save(studentEdit);
-//	}
 
 	@Override
 	public void save(StudentDTO studentDTO) {
 		if (studentDTO.getId() == 0) {
 			Student student = new Student();
-			Library library = new Library();
+			Library library = null; // Allow null library for new student
+			if (studentDTO.getLibrary() != null) {
+				library = new Library();
+				library.setBookId(studentDTO.getLibrary().getBookId());
+				library.setBookName(studentDTO.getLibrary().getBookName());
+				library.setBookAuthor(studentDTO.getLibrary().getBookAuthor());
+				libraryRepository.save(library);
+			}
+			student.setBook(library);
 			student.setRollNo(studentDTO.getRollNo());
 			student.setName(studentDTO.getName());
 			student.setEmail(studentDTO.getEmail());
 			student.setNumber(studentDTO.getNumber());
-			library.setBookId(studentDTO.getLibrary().getBookId());
-			library.setBookName(studentDTO.getLibrary().getBookName());
-			library.setBookAuthor(studentDTO.getLibrary().getBookAuthor());
-			// Save the library first
-			libraryRepository.save(library);
-			// Set the library in the student
-			student.setBook(library);
-			// Save the student
 			studentRepository.save(student);
 		} else {
 			Optional<Student> optionalStudent = studentRepository.findById(studentDTO.getId());
-//			Student studentEdit = studentRepository.findById(studentDTO.getId()).get();
 			if (optionalStudent.isPresent()) {
 				Student studentEdit = optionalStudent.get();
 				if (studentDTO.getRollNo() != null) {
@@ -159,7 +133,6 @@ public class StudentServiceImpl implements StudentService {
 				} else if (studentDTO.getNumber() != 0) {
 					studentEdit.setNumber(studentDTO.getNumber());
 				}
-				// Update library information
 				Library libraryEdit = studentEdit.getBook();
 				if (libraryEdit != null && studentDTO.getLibrary() != null) {
 					libraryEdit.setBookId(studentDTO.getLibrary().getBookId());
@@ -179,8 +152,33 @@ public class StudentServiceImpl implements StudentService {
 
 		studentRepository.deleteById(id);
 
-		// Convert the deleted student to DTO and return it
 		return student;
+	}
+
+	@Override
+	public void assignBookToStudent(Long studentId, Long bookId) {
+
+		Optional<Student> studentOptional = studentRepository.findById(studentId);
+		Optional<Library> bookOptional = libraryRepository.findById(bookId);
+
+		if (studentOptional.isPresent()) {
+
+			if (bookOptional.isPresent()) {
+				Student student = studentOptional.get();
+				Library library = bookOptional.get();
+
+				if (student.getBook() != null) {
+					throw new IllegalArgumentException("Student already has a book assigned");
+				}
+				student.setBook(library);
+				studentRepository.save(student);
+			} else {
+				throw new IllegalArgumentException("Book not found");
+			}
+		} else {
+			throw new IllegalArgumentException("Student not found");
+		}
+
 	}
 
 }

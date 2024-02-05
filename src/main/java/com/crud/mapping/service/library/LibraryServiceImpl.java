@@ -36,6 +36,7 @@ public class LibraryServiceImpl implements LibraryService{
 	public LibraryDTO getStudentById(Long id) {
 		Library library = libraryRepository.findById(id).get();
 		LibraryDTO libraryDTO = new LibraryDTO();
+		libraryDTO.setBookId(library.getBookId());
 		libraryDTO.setBookName(library.getBookName());
 		libraryDTO.setBookAuthor(library.getBookAuthor());
 		return libraryDTO;
@@ -46,7 +47,8 @@ public class LibraryServiceImpl implements LibraryService{
 		Library libraryEdit = libraryRepository.findById(id).get();
 		if (libraryDTO.getBookName() != null) {
 			libraryEdit.setBookName(libraryDTO.getBookName());
-		} else if (libraryDTO.getBookAuthor() != null) {
+		} 
+		if (libraryDTO.getBookAuthor() != null) {
 			libraryEdit.setBookAuthor(libraryDTO.getBookAuthor());
 		}
 		libraryRepository.save(libraryEdit);
@@ -79,7 +81,6 @@ public class LibraryServiceImpl implements LibraryService{
 
 		libraryRepository.deleteById(id);
 
-		// Convert the deleted student to DTO and return it
 		return library;
 	}
 }
