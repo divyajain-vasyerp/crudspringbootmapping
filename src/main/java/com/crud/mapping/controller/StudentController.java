@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.crud.mapping.dto.StudentDTO;
 import com.crud.mapping.service.student.StudentService;
@@ -85,5 +87,36 @@ public class StudentController {
 			return ResponseEntity.status(500).body("Student already has a book assigned");
 		}
 	}
+
+	@PostMapping("/uploadFile")
+	public ResponseEntity<String> uploadFile(@RequestParam MultipartFile file) {
+		try {
+			return ResponseEntity.ok("File Uploaded Sucessfully "+studentService.uploadFile(file));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found");
+		}
+	}
+	
+	@PostMapping("/uploadTextFile")
+	public ResponseEntity<String> uploadTextFile(@RequestParam MultipartFile file) {
+		try {
+			return ResponseEntity.ok("File Uploaded Sucessfully "+studentService.uploadTextFile(file));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found");
+		}
+	}
+	
+	@GetMapping("/download/{fileName}")
+	public ResponseEntity<Object> downloadFile(@PathVariable String fileName) {
+		try {
+			ResponseEntity<Object> files = studentService.downloadFile(fileName);
+//			studentService.uploadFile(file);
+			return files;
+		} catch (Exception e) {
+
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file Not Found");
+		}
+	}
+	
 
 }

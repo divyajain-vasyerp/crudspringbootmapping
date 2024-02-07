@@ -1,11 +1,22 @@
 package com.crud.mapping.service.student;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.crud.mapping.dto.LibraryDTO;
 import com.crud.mapping.dto.StudentDTO;
@@ -181,4 +192,72 @@ public class StudentServiceImpl implements StudentService {
 
 	}
 
+	public static final String Upload_File = "D:\\JAVA\\DemoApiCrudMapping\\uploadFiles";
+
+	@Override
+	public String uploadFile(MultipartFile file) throws IOException {
+		File uploadDir = new File(Upload_File);
+		if (!uploadDir.exists()) {
+			uploadDir.mkdir();
+		}
+		String fileName = file.getOriginalFilename();
+		Path path = Paths.get(Upload_File).resolve(fileName);
+		Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+		String uriString = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/download/").path(fileName)
+				.toUriString();
+		return uriString;
+	}
+
+	@Override
+	public String uploadTextFile(MultipartFile file) throws IOException {
+		String fileName;
+		try {
+			File directory = new File(Upload_File);
+			if (!directory.exists()) {
+				directory.mkdirs();
+			}
+			if (file.getContentType().equals("text/plain")) {
+				fileName = "index.txt";
+				Path filePath = Paths.get(Upload_File).resolve(fileName);
+				if (!filePath.toFile().exists()) {
+					filePath.toFile().createNewFile();
+				}
+				Files.write(filePath, file.getBytes(), StandardOpenOption.APPEND);
+			} else {
+				fileName = file.getOriginalFilename();
+				Path filePath = Paths.get(Upload_File).resolve(fileName);
+				Files.write(filePath, file.getBytes(), StandardOpenOption.CREATE);
+			}
+
+			String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/download/")
+					.path(fileName).toUriString();
+
+			System.out.println(file.getContentType());
+
+			return ("File uploaded successfully. Download URL: " + fileDownloadUri);
+		} catch (IOException ex) {
+			throw new IOException("Could not upload the file: " + ex.getMessage());
+		}
+	}
+	@Override
+	public ResponseEntity<Object> downloadFile(String fileName) {
+
+		ResponseEntity<Object> response = null;
+		try {
+			Path filepath = Paths.get(Upload_File).resolve(fileName).normalize();
+			File file = filepath.toFile();
+			if (file.exists()) {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+				headers.setContentDispositionFormData("attachment", fileName);
+				response = ResponseEntity.ok().headers(headers).contentLength(file.length())
+						.body(new FileSystemResource(file));
+			} else {
+				response = ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return response;
+	}
 }
