@@ -85,42 +85,27 @@ public class StudentController {
 	}
 
 	@PostMapping("/uploadFile")
-	public ResponseEntity<?> uploadFile(@RequestParam MultipartFile file) throws IOException{
-		ResponseDTO response = null;
-			String student;
-			try {
-				student = studentService.uploadFile(file);
-				response = new ResponseDTO(200, "ok", student);
-//				return ResponseEntity.ok(response);
-			} catch (IOException e) {
-				throw new IOException(e.getMessage());
-			}
-			return ResponseEntity.ok(response);
+	public ResponseEntity<?> uploadFile(@RequestParam MultipartFile file) throws IOException {
+		ResponseDTO response;
+		String student;
+		student = studentService.uploadFile(file);
+		response = new ResponseDTO(200, "ok", student);
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/uploadTextFile")
 	public ResponseEntity<?> uploadTextFile(@RequestParam MultipartFile file) throws IOException {
-		ResponseDTO response = null;
-			String student;
-			try {
-				student = studentService.uploadFile(file);
-				response = new ResponseDTO(200, "Book is Assigned ", student);
-			} catch (IOException e) {
-				throw new IOException(e.getMessage());
-			}
+		ResponseDTO response;
+		String student;
+		student = studentService.uploadFile(file);
+		response = new ResponseDTO(200, "Book is Assigned ", student);
 		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/download/{fileName}")
 	public ResponseEntity<Object> downloadFile(@PathVariable String fileName) throws IOException {
-		try {
-			ResponseEntity<Object> files = studentService.downloadFile(fileName);
-//			studentService.uploadFile(file);
-			return files;
-		} catch (Exception e) {
-			throw new IOException(e.getMessage());
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file Not Found");
-		}
+		ResponseEntity<Object> files = studentService.downloadFile(fileName);
+		return files;
 	}
 
 }
