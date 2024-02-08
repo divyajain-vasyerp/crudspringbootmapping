@@ -20,6 +20,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.crud.mapping.dto.LibraryDTO;
 import com.crud.mapping.dto.StudentDTO;
+import com.crud.mapping.exception.BookIsAlreadyAssignedException;
+import com.crud.mapping.exception.StudentNotFoundException;
 import com.crud.mapping.model.Library;
 import com.crud.mapping.model.Student;
 import com.crud.mapping.repository.LibraryRepository;
@@ -61,7 +63,8 @@ public class StudentServiceImpl implements StudentService {
 
 	@Override
 	public StudentDTO getStudentById(Long id) {
-		Student student = studentRepository.findById(id).get();
+		Student student = studentRepository.findById(id)
+				.orElseThrow(() -> new StudentNotFoundException("Student Not Found: " + id));
 		Library book = student.getBook();
 
 		StudentDTO studentDto = new StudentDTO();
@@ -81,7 +84,7 @@ public class StudentServiceImpl implements StudentService {
 	}
 
 	@Override
-	public void update(long id, StudentDTO studentDTO) {
+	public StudentDTO update(long id, StudentDTO studentDTO) {
 		Optional<Student> optionalStudent = studentRepository.findById(id);
 
 		if (optionalStudent.isPresent()) {
@@ -111,10 +114,11 @@ public class StudentServiceImpl implements StudentService {
 			}
 			studentRepository.save(studentEdit);
 		}
+		return studentDTO;
 	}
 
 	@Override
-	public void save(StudentDTO studentDTO) {
+	public StudentDTO save(StudentDTO studentDTO) {
 		if (studentDTO.getId() == 0) {
 			Student student = new Student();
 			Library library = null; // Allow null library for new student
@@ -134,7 +138,8 @@ public class StudentServiceImpl implements StudentService {
 		} else {
 			Optional<Student> optionalStudent = studentRepository.findById(studentDTO.getId());
 			if (optionalStudent.isPresent()) {
-				Student studentEdit = optionalStudent.get();
+				Student studentEdit = optionalStudent
+						.orElseThrow(() -> new NullPointerException("Any Feilds is null values"));
 				if (studentDTO.getRollNo() != null) {
 					studentEdit.setRollNo(studentDTO.getRollNo());
 				} else if (studentDTO.getName() != null) {
@@ -153,13 +158,14 @@ public class StudentServiceImpl implements StudentService {
 				studentRepository.save(studentEdit);
 			}
 		}
+		return studentDTO;
 	}
 
 	@Override
 	public Student deleteStudentById(Long id) {
 
 		Student student = studentRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Student not found with id: " + id));
+				.orElseThrow(() -> new StudentNotFoundException("Student not found with id: " + id));
 
 		studentRepository.deleteById(id);
 
@@ -167,11 +173,11 @@ public class StudentServiceImpl implements StudentService {
 	}
 
 	@Override
-	public void assignBookToStudent(Long studentId, Long bookId) {
+	public Student assignBookToStudent(Long studentId, Long bookId) {
 
 		Optional<Student> studentOptional = studentRepository.findById(studentId);
 		Optional<Library> bookOptional = libraryRepository.findById(bookId);
-
+		Student student1;
 		if (studentOptional.isPresent()) {
 
 			if (bookOptional.isPresent()) {
@@ -179,32 +185,38 @@ public class StudentServiceImpl implements StudentService {
 				Library library = bookOptional.get();
 
 				if (student.getBook() != null) {
-					throw new IllegalArgumentException("Student already has a book assigned");
+					throw new BookIsAlreadyAssignedException("another student already book assigned ");
 				}
 				student.setBook(library);
-				studentRepository.save(student);
+				student1 = studentRepository.save(student);
 			} else {
-				throw new IllegalArgumentException("Book not found");
+				throw new BookIsAlreadyAssignedException("Book not found");
 			}
 		} else {
-			throw new IllegalArgumentException("Student not found");
+			throw new StudentNotFoundException("Student not found: " + studentId);
 		}
-
+		;
+		return student1;
 	}
 
 	public static final String Upload_File = "D:\\JAVA\\DemoApiCrudMapping\\uploadFiles";
 
 	@Override
-	public String uploadFile(MultipartFile file) throws IOException {
-		File uploadDir = new File(Upload_File);
-		if (!uploadDir.exists()) {
-			uploadDir.mkdir();
+	public String uploadFile(MultipartFile file) throws IOException{
+		String uriString = null;
+		try {
+			File uploadDir = new File(Upload_File);
+			if (!uploadDir.exists()) {
+				uploadDir.mkdir();
+			}
+			String fileName = file.getOriginalFilename();
+			Path path = Paths.get(Upload_File).resolve(fileName);
+			Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+			uriString = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/download/").path(fileName)
+					.toUriString();
+		} catch (Exception e) {
+			throw new IOException("File Fields is Empty ");
 		}
-		String fileName = file.getOriginalFilename();
-		Path path = Paths.get(Upload_File).resolve(fileName);
-		Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
-		String uriString = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/download/").path(fileName)
-				.toUriString();
 		return uriString;
 	}
 
@@ -236,11 +248,12 @@ public class StudentServiceImpl implements StudentService {
 
 			return ("File uploaded successfully. Download URL: " + fileDownloadUri);
 		} catch (IOException ex) {
-			throw new IOException("Could not upload the file: " + ex.getMessage());
+			throw new IOException("File Fields is Empty : ");
 		}
 	}
+
 	@Override
-	public ResponseEntity<Object> downloadFile(String fileName) {
+	public ResponseEntity<Object> downloadFile(String fileName) throws IOException {
 
 		ResponseEntity<Object> response = null;
 		try {
@@ -256,7 +269,7 @@ public class StudentServiceImpl implements StudentService {
 				response = ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new IOException("Could not upload the file: ");
 		}
 		return response;
 	}

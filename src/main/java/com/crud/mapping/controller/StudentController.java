@@ -1,5 +1,6 @@
 package com.crud.mapping.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.crud.mapping.dto.ResponseDTO;
 import com.crud.mapping.dto.StudentDTO;
+import com.crud.mapping.exception.NoDataFoundException;
+import com.crud.mapping.exception.StudentNotFoundException;
+import com.crud.mapping.model.Student;
 import com.crud.mapping.service.student.StudentService;
 
 @RequestMapping("/api")
@@ -26,97 +31,96 @@ public class StudentController {
 	@Autowired
 	private StudentService studentService;
 
+//	@GetMapping("/getAllStudents")
+//	public ResponseEntity<List<StudentDTO>> get() {
+//		return ResponseEntity.ok(studentService.getAllStudents());
+//	}
+
 	@GetMapping("/getAllStudents")
-	public ResponseEntity<List<StudentDTO>> get() {
-		return ResponseEntity.ok(studentService.getAllStudents());
+	public ResponseEntity<List<StudentDTO>> getAllStudents() {
+		List<StudentDTO> studentList = studentService.getAllStudents();
+		return ResponseEntity.ok(studentList);
 	}
 
 	@GetMapping("/getStudentById/{id}")
 	public ResponseEntity<?> getStudentById(@PathVariable Long id) {
-		try {
-			StudentDTO studentDto = studentService.getStudentById(id);
-			System.out.println("Id is found " + id);
-			return ResponseEntity.ok(studentDto);
-		} catch (Exception e) {
-			System.out.println("Id " + id + " is not found");
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Id " + id + " is Not Found");
-		}
+		ResponseDTO response;
+		StudentDTO studentDto = studentService.getStudentById(id);
+		System.out.println("Id is found " + id);
+		response = new ResponseDTO(200, "Ok", studentDto);
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/addStudent")
-	public ResponseEntity<String> add(@RequestBody StudentDTO studentDto) {
-		try {
-			studentService.save(studentDto);
-			return ResponseEntity.ok("data is added " + HttpStatus.CREATED);
-		} catch (Exception e) {
-			System.out.println(e.toString() + "Yor data is not added");
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Yor data is not added");
-		}
+	public ResponseEntity<?> add(@RequestBody StudentDTO studentDto) {
+		ResponseDTO response;
+		StudentDTO studentDTO2;
+		studentDTO2 = studentService.save(studentDto);
+		response = new ResponseDTO(200, "Ok", studentDTO2);
+		return ResponseEntity.ok(response);
 	}
 
 	@PutMapping("/updateStudent/{id}")
-	public ResponseEntity<String> update(@PathVariable long id, @RequestBody StudentDTO studentDto) {
-		try {
-			studentService.update(id, studentDto);
-			return ResponseEntity.ok("Your data is updated" + " " + HttpStatus.UPGRADE_REQUIRED);
-		} catch (Exception e) {
-			System.out.println(e.toString() + "Yor data is not Upgraded");
-			return ResponseEntity.status(HttpStatus.UPGRADE_REQUIRED).body("Yor data is not Updated");
-		}
+	public ResponseEntity<?> update(@PathVariable long id, @RequestBody StudentDTO studentDto) {
+		ResponseDTO response;
+		StudentDTO studentDTO2 = studentService.update(id, studentDto);
+		response = new ResponseDTO(200, "Ok", studentDTO2);
+		return ResponseEntity.ok(response);
 	}
 
 	@DeleteMapping("/deleteStudent/{id}")
-	public ResponseEntity<String> deleteStudent(@PathVariable Long id) {
-		try {
-			studentService.deleteStudentById(id);
-			return ResponseEntity.ok("Id is Sucessfully Deleted " + id);
-		} catch (Exception e) {
-			System.out.println("Id is Not Deleted " + id);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Is is not Deleted " + id);
-		}
+	public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+		ResponseDTO response;
+		Student student = studentService.deleteStudentById(id);
+		response = new ResponseDTO(200, "Id is Sucessfully Deleted ", student);
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/{studentId}/assignBook/{bookId}")
-	public ResponseEntity<String> assignBookToStudent(@PathVariable Long studentId, @PathVariable Long bookId) {
-		try {
-			studentService.assignBookToStudent(studentId, bookId);
-			return ResponseEntity.ok("Book assigned to student successfully.");
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		} catch (Exception e) {
-			return ResponseEntity.status(500).body("Student already has a book assigned");
-		}
+	public ResponseEntity<?> assignBookToStudent(@PathVariable Long studentId, @PathVariable Long bookId) {
+		ResponseDTO response;
+		Student student = studentService.assignBookToStudent(studentId, bookId);
+		response = new ResponseDTO(200, "Book is Assigned ", student);
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/uploadFile")
-	public ResponseEntity<String> uploadFile(@RequestParam MultipartFile file) {
-		try {
-			return ResponseEntity.ok("File Uploaded Sucessfully "+studentService.uploadFile(file));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found");
-		}
+	public ResponseEntity<?> uploadFile(@RequestParam MultipartFile file) throws IOException{
+		ResponseDTO response = null;
+			String student;
+			try {
+				student = studentService.uploadFile(file);
+				response = new ResponseDTO(200, "ok", student);
+//				return ResponseEntity.ok(response);
+			} catch (IOException e) {
+				throw new IOException(e.getMessage());
+			}
+			return ResponseEntity.ok(response);
 	}
-	
+
 	@PostMapping("/uploadTextFile")
-	public ResponseEntity<String> uploadTextFile(@RequestParam MultipartFile file) {
-		try {
-			return ResponseEntity.ok("File Uploaded Sucessfully "+studentService.uploadTextFile(file));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found");
-		}
+	public ResponseEntity<?> uploadTextFile(@RequestParam MultipartFile file) throws IOException {
+		ResponseDTO response = null;
+			String student;
+			try {
+				student = studentService.uploadFile(file);
+				response = new ResponseDTO(200, "Book is Assigned ", student);
+			} catch (IOException e) {
+				throw new IOException(e.getMessage());
+			}
+		return ResponseEntity.ok(response);
 	}
-	
+
 	@GetMapping("/download/{fileName}")
-	public ResponseEntity<Object> downloadFile(@PathVariable String fileName) {
+	public ResponseEntity<Object> downloadFile(@PathVariable String fileName) throws IOException {
 		try {
 			ResponseEntity<Object> files = studentService.downloadFile(fileName);
 //			studentService.uploadFile(file);
 			return files;
 		} catch (Exception e) {
-
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file Not Found");
+			throw new IOException(e.getMessage());
+//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file Not Found");
 		}
 	}
-	
 
 }

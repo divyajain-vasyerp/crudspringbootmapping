@@ -14,13 +14,13 @@ public interface StudentService {
 	List<StudentDTO> getAllStudents();
     StudentDTO getStudentById(Long id);
     Student deleteStudentById(Long id);
-    public void save(StudentDTO studentDTO);
-	public void update(long id, StudentDTO studentDTO);
+    public StudentDTO save(StudentDTO studentDTO);
+	public StudentDTO update(long id, StudentDTO studentDTO);
 	
-    void assignBookToStudent(Long studentId, Long bookId);
+    Student assignBookToStudent(Long studentId, Long bookId);
     
     public String uploadFile(MultipartFile file) throws IOException;
-    public ResponseEntity<Object> downloadFile(String fileName);
+    public ResponseEntity<Object> downloadFile(String fileName) throws IOException;
     
     public String uploadTextFile(MultipartFile file) throws IOException ;
 
